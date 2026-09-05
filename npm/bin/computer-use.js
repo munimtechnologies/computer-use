@@ -18,8 +18,10 @@ const REPO = "munimtechnologies/computer-use";
 const VERSION = pkg.version;
 
 function assetFor(platform, arch) {
-  if (platform === "darwin") return { asset: "computer-use-macos-universal.zip", binary: "computer-use" };
-  if (platform === "win32" && arch === "x64") return { asset: "computer-use-windows-x64.zip", binary: "computer-use.exe" };
+  if (platform === "darwin")
+    return { asset: "computer-use-macos-universal.zip", binary: "computer-use" };
+  if (platform === "win32" && arch === "x64")
+    return { asset: "computer-use-windows-x64.zip", binary: "computer-use.exe" };
   return null;
 }
 
@@ -28,7 +30,10 @@ function cacheDir() {
     process.env.COMPUTER_USE_CACHE_DIR ||
     (process.platform === "win32"
       ? path.join(process.env.LOCALAPPDATA || os.homedir(), "munim-computer-use")
-      : path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), ".cache"), "munim-computer-use"));
+      : path.join(
+          process.env.XDG_CACHE_HOME || path.join(os.homedir(), ".cache"),
+          "munim-computer-use",
+        ));
   return path.join(base, VERSION);
 }
 
