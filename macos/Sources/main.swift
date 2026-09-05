@@ -7,7 +7,7 @@ import ScreenCaptureKit
 // Swift 6: Result's Failure must be Error. Keep stringly failures for MCP replies.
 extension String: @retroactive Error {}
 
-// t3-desktop-mcp — a macOS computer-use MCP server built on the Accessibility API.
+// computer-use — a macOS computer-use MCP server built on the Accessibility API.
 //
 // Design notes:
 //  * Speaks newline-delimited JSON-RPC over stdio (MCP stdio transport).
@@ -22,7 +22,7 @@ extension String: @retroactive Error {}
 
 // MARK: - AX helpers
 
-/// Host settings pass `T3_DESKTOP_AGENT_CURSOR=0` / `T3_DESKTOP_BROWSER=0` when
+/// Host settings pass `COMPUTER_USE_AGENT_CURSOR=0` / `COMPUTER_USE_BROWSER=0` when
 /// the matching Computer Use toggle is off. Missing or empty means enabled.
 func envFlagDisabled(_ name: String) -> Bool {
     guard let raw = ProcessInfo.processInfo.environment[name]?
@@ -35,8 +35,8 @@ func envFlagDisabled(_ name: String) -> Bool {
     return raw == "0" || raw == "false" || raw == "off" || raw == "no"
 }
 
-var agentCursorEnabled: Bool { !envFlagDisabled("T3_DESKTOP_AGENT_CURSOR") }
-var browserControlEnabled: Bool { !envFlagDisabled("T3_DESKTOP_BROWSER") }
+var agentCursorEnabled: Bool { !envFlagDisabled("COMPUTER_USE_AGENT_CURSOR") }
+var browserControlEnabled: Bool { !envFlagDisabled("COMPUTER_USE_BROWSER") }
 
 func axCopy(_ el: AXUIElement, _ attr: String) -> AnyObject? {
     var value: AnyObject?
@@ -267,10 +267,10 @@ func walk(_ el: AXUIElement, depth: Int, lines: inout [String], budget: inout In
 /// a takeover yields to a human who is mid-action instead of fighting them for
 /// it. Background-routed actions are unaffected — they never disturb anyone.
 ///
-/// Tune with `T3_DESKTOP_COMPUTER_USE_YIELD_SECS`; `0` disables the guard.
+/// Tune with `COMPUTER_USE_COMPUTER_USE_YIELD_SECS`; `0` disables the guard.
 enum UserPresence {
     static let yieldWindow: TimeInterval = {
-        if let raw = ProcessInfo.processInfo.environment["T3_DESKTOP_COMPUTER_USE_YIELD_SECS"],
+        if let raw = ProcessInfo.processInfo.environment["COMPUTER_USE_COMPUTER_USE_YIELD_SECS"],
             let parsed = Double(raw), parsed >= 0
         {
             return parsed
@@ -499,16 +499,16 @@ func windowTarget(under point: CGPoint) -> WindowTarget? {
         else { continue }
         let pid = pid_t(pidValue.int32Value)
         let number = numberValue.uint32Value
-        // Skip this process and the separate T3AgentCursor overlay, which sits
+        // Skip this process and the separate MunimAgentCursor overlay, which sits
         // above the click point by design and would steal hit-testing.
         if pid == getpid() { continue }
         if let owner = window[kCGWindowOwnerName as String] as? String,
-           owner == "T3AgentCursor" || owner.hasPrefix("T3AgentCursor")
+           owner == "MunimAgentCursor" || owner.hasPrefix("MunimAgentCursor")
         {
             continue
         }
         if let app = NSRunningApplication(processIdentifier: pid),
-           app.bundleIdentifier == "com.t3tools.t3code.agent-cursor"
+           app.bundleIdentifier == "com.munimtech.computer-use.agent-cursor"
         {
             continue
         }
@@ -1588,9 +1588,9 @@ func toolDrag(_ args: [String: Any]) -> String {
 /// so the default is to stop and let the human type it. Operator-style agents
 /// take the same line and hand control back at password prompts.
 ///
-/// Set `T3_DESKTOP_ALLOW_SECURE_FIELD_INPUT=1` to opt out.
+/// Set `COMPUTER_USE_ALLOW_SECURE_FIELD_INPUT=1` to opt out.
 func refuseSecureFieldInput(_ element: AXUIElement, _ id: String) -> String? {
-    if ProcessInfo.processInfo.environment["T3_DESKTOP_ALLOW_SECURE_FIELD_INPUT"] == "1" {
+    if ProcessInfo.processInfo.environment["COMPUTER_USE_ALLOW_SECURE_FIELD_INPUT"] == "1" {
         return nil
     }
     guard axString(element, kAXRoleAttribute as String) == "AXSecureTextField" else { return nil }
@@ -1613,7 +1613,7 @@ func refuseSecureFieldInput(_ element: AXUIElement, _ id: String) -> String? {
         + "\(handedBackTo) and brought to the front for them to type into. The credential is "
         + "deliberately not routed through the model. Tell the user it is ready, wait for them to "
         + "say they are done, then continue — do not retry this call. "
-        + "(T3_DESKTOP_ALLOW_SECURE_FIELD_INPUT=1 lets the agent type throwaway credentials.)"
+        + "(COMPUTER_USE_ALLOW_SECURE_FIELD_INPUT=1 lets the agent type throwaway credentials.)"
 }
 
 func toolSetValue(_ args: [String: Any]) -> String {
@@ -1674,7 +1674,7 @@ enum Chrome {
     static let stateURL: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSTemporaryDirectory())
-        let dir = base.appendingPathComponent("t3-desktop-mcp", isDirectory: true)
+        let dir = base.appendingPathComponent("computer-use", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("agent-window")
     }()
@@ -2674,7 +2674,7 @@ func dispatch(_ name: String, _ args: [String: Any]) -> String {
 
 // MARK: - Agent cursor overlay
 //
-// The drawing lives in the T3AgentCursor.app child (see AgentCursor.swift).
+// The drawing lives in the MunimAgentCursor.app child (see AgentCursor.swift).
 // This facade keeps the older call sites (`CursorOverlay.shared.press`) pointed
 // at the bundle that actually puts a window up.
 
@@ -2721,7 +2721,7 @@ if CommandLine.arguments.contains("computer-history") {
     if let flag = args.firstIndex(of: "--root"), args.index(after: flag) < args.endIndex {
         ComputerHistoryDaemon.run(root: args[args.index(after: flag)])
     }
-    fputs("t3-desktop-mcp: computer-history requires --root <dir>\n", stderr)
+    fputs("computer-use: computer-history requires --root <dir>\n", stderr)
     exit(2)
 }
 // Ask macOS for the permissions Computer Use needs, from inside the app bundle
@@ -2759,7 +2759,7 @@ if CommandLine.arguments.contains("cursor-overlay") {
     if let flag = args.firstIndex(of: "--socket"), args.index(after: flag) < args.endIndex {
         AgentCursorOverlay.run(socketPath: args[args.index(after: flag)])
     }
-    fputs("t3-desktop-mcp: cursor-overlay requires --socket <path>\n", stderr)
+    fputs("computer-use: cursor-overlay requires --socket <path>\n", stderr)
     exit(2)
 }
 
@@ -2767,7 +2767,7 @@ BrowserBridge.shared.start()
 
 /// Best-effort: drop the agent Chrome tab group when this MCP process is going
 /// away so aborted / unfinished Computer Use turns do not leave an empty
-/// "MT Code" / "T3 Code" group in the user's tab strip.
+/// "MT Code" / "MT Code" group in the user's tab strip.
 func cleanupAgentBrowserTabsOnExit() {
     guard browserControlEnabled, BrowserBridge.shared.isConnected else { return }
     _ = BrowserBridge.shared.call("close_all_tabs", timeout: 2)

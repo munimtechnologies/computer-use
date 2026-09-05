@@ -12,7 +12,7 @@ import Foundation
 // AppKit needs a real application bundle to put a window up: a bare executable
 // started with `Process` never finishes launching, so the overlay stays
 // invisible and silent. The pointer therefore lives in a minimal
-// `T3AgentCursor.app`. Preferred launch is `NSWorkspace` (registers with
+// `MunimAgentCursor.app`. Preferred launch is `NSWorkspace` (registers with
 // Launch Services); if that fails we fall back to `Process` aimed at the
 // bundled executable, which still gets a real `Bundle.main`. Move/hide
 // commands ride a Unix socket:
@@ -29,9 +29,9 @@ import Foundation
 // arrow, spring follow with tilt/squash, idle breathe) — never a
 // system-style pointer. No click ring and no settle wobble.
 
-private let overlayAppName = "T3AgentCursor.app"
-private let overlayExecutableName = "T3AgentCursor"
-private let overlayBundleIdentifier = "com.t3tools.t3code.agent-cursor"
+private let overlayAppName = "MunimAgentCursor.app"
+private let overlayExecutableName = "MunimAgentCursor"
+private let overlayBundleIdentifier = "com.munimtech.computer-use.agent-cursor"
 
 /// Client side: owns the overlay process and speaks to it.
 final class AgentCursor {
@@ -133,9 +133,9 @@ final class AgentCursor {
     }
 
     /// Brief grace so a follow-up tool in the same turn cancels before fade.
-    /// Override with `T3_DESKTOP_AGENT_CURSOR_TASK_FADE_SECS`.
+    /// Override with `COMPUTER_USE_AGENT_CURSOR_TASK_FADE_SECS`.
     private static func taskFadeGraceSeconds() -> TimeInterval {
-        if let raw = ProcessInfo.processInfo.environment["T3_DESKTOP_AGENT_CURSOR_TASK_FADE_SECS"],
+        if let raw = ProcessInfo.processInfo.environment["COMPUTER_USE_AGENT_CURSOR_TASK_FADE_SECS"],
            let value = Double(raw.trimmingCharacters(in: .whitespacesAndNewlines)),
            value.isFinite, value >= 0, value < 3600
         {
@@ -211,7 +211,7 @@ final class AgentCursor {
         if listenerFD >= 0 { return }
 
         guard let appURL = OverlayBundle.ensureApp() else {
-            fputs("t3-desktop-mcp: agent cursor: could not materialise T3AgentCursor.app\n", stderr)
+            fputs("computer-use: agent cursor: could not materialise MunimAgentCursor.app\n", stderr)
             pending.removeAll()
             return
         }
@@ -219,11 +219,11 @@ final class AgentCursor {
         // sockaddr_un.sun_path is only 104 bytes on macOS; NSTemporaryDirectory()
         // under /var/folders/... plus a UUID blows past that and bind() fails,
         // which is why the overlay never started from the MCP server.
-        let path = "/tmp/t3ac-\(getpid()).sock"
+        let path = "/tmp/cuac-\(getpid()).sock"
         startupGeneration &+= 1
         let generation = startupGeneration
         guard startListening(at: path) else {
-            fputs("t3-desktop-mcp: agent cursor: could not listen on \(path)\n", stderr)
+            fputs("computer-use: agent cursor: could not listen on \(path)\n", stderr)
             pending.removeAll()
             return
         }
@@ -249,7 +249,7 @@ final class AgentCursor {
             guard let self else { return }
             if let error {
                 fputs(
-                    "t3-desktop-mcp: agent cursor: NSWorkspace open failed (\(error.localizedDescription)); falling back to Process\n",
+                    "computer-use: agent cursor: NSWorkspace open failed (\(error.localizedDescription)); falling back to Process\n",
                     stderr
                 )
                 self.lock.lock()
@@ -266,7 +266,7 @@ final class AgentCursor {
             if self.connection == nil, self.process?.isRunning != true,
                self.socketPath == path, self.startupGeneration == generation
             {
-                fputs("t3-desktop-mcp: agent cursor: NSWorkspace timed out; falling back to Process\n", stderr)
+                fputs("computer-use: agent cursor: NSWorkspace timed out; falling back to Process\n", stderr)
                 self.launchViaProcess(executable: executable, socketPath: path)
             }
         }
@@ -278,7 +278,7 @@ final class AgentCursor {
             self.lock.lock()
             defer { self.lock.unlock() }
             if self.connection == nil, self.socketPath == path, self.startupGeneration == generation {
-                fputs("t3-desktop-mcp: agent cursor: overlay never connected; resetting\n", stderr)
+                fputs("computer-use: agent cursor: overlay never connected; resetting\n", stderr)
                 self.tearDownLocked()
             }
         }
@@ -297,7 +297,7 @@ final class AgentCursor {
             try child.run()
             process = child
         } catch {
-            fputs("t3-desktop-mcp: agent cursor: Process launch failed (\(error.localizedDescription))\n", stderr)
+            fputs("computer-use: agent cursor: Process launch failed (\(error.localizedDescription))\n", stderr)
             tearDownLocked()
         }
     }
@@ -429,7 +429,7 @@ private enum OverlayBundle {
         let fm = FileManager.default
         let selfURL = URL(fileURLWithPath: CommandLine.arguments[0]).resolvingSymlinksInPath()
 
-        // Staged artifact: `…/t3-desktop-mcp/T3AgentCursor.app` beside the binary.
+        // Staged artifact: `…/computer-use/MunimAgentCursor.app` beside the binary.
         let sibling = selfURL.deletingLastPathComponent().appendingPathComponent(overlayAppName)
         if isValidApp(sibling) {
             do {
@@ -445,7 +445,7 @@ private enum OverlayBundle {
         guard
             let support = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
         else { return nil }
-        let dir = support.appendingPathComponent("t3-desktop-mcp", isDirectory: true)
+        let dir = support.appendingPathComponent("computer-use", isDirectory: true)
         let appURL = dir.appendingPathComponent(overlayAppName, isDirectory: true)
         do {
             try fm.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -534,7 +534,7 @@ private enum OverlayBundle {
         	<key>CFBundleInfoDictionaryVersion</key>
         	<string>6.0</string>
         	<key>CFBundleName</key>
-        	<string>T3 Agent Cursor</string>
+        	<string>Munim Agent Cursor</string>
         	<key>CFBundlePackageType</key>
         	<string>APPL</string>
         	<key>CFBundleShortVersionString</key>

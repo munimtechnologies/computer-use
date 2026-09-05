@@ -196,7 +196,7 @@ pub fn backend() -> Result<Box<dyn Desktop>> {
     #[cfg(not(any(windows, target_os = "linux")))]
     {
         Err(DesktopError::new(
-            "t3-desktop-mcp-rs supports Windows and Linux; macOS uses the Swift t3-desktop-mcp server",
+            "computer-use-native supports Windows and Linux; macOS uses the Swift computer-use server",
         ))
     }
 }

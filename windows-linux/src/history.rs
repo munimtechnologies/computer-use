@@ -1,6 +1,6 @@
 //! Computer History daemon for Windows and Linux.
 //!
-//! Invoked as `t3-desktop-mcp computer-history --root <dir>`.
+//! Invoked as `computer-use computer-history --root <dir>`.
 //! Samples the frontmost app / focused accessibility node on an interval and
 //! writes Skysight-style segment JSONL under `<root>/segments/`.
 
@@ -97,7 +97,7 @@ pub fn run(root: PathBuf) -> Result<(), String> {
     )?;
 
     eprintln!(
-        "t3-desktop-mcp: computer-history daemon started root={}",
+        "computer-use: computer-history daemon started root={}",
         root.display()
     );
 

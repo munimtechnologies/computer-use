@@ -1,6 +1,6 @@
 //! Desktop-control MCP server for Windows and Linux.
 //!
-//! The macOS half of this feature is a Swift package (`native/t3-desktop-mcp`)
+//! The macOS half of this feature is a Swift package (`macos`)
 //! built on the Accessibility API. This crate covers the other two platforms
 //! and speaks the identical MCP dialect — same tool names, same argument shapes,
 //! same tool text — so a model needs no per-platform knowledge.
@@ -62,7 +62,7 @@ fn main() {
     // the process is a relay, not a server.
     if std::env::args().nth(1).as_deref() == Some("native-host") {
         if let Err(error) = browser::run_native_host() {
-            eprintln!("t3-desktop-mcp: native host stopped: {error}");
+            eprintln!("computer-use: native host stopped: {error}");
         }
         return;
     }
@@ -76,11 +76,11 @@ fn main() {
             }
         }
         let Some(root) = root else {
-            eprintln!("t3-desktop-mcp: computer-history requires --root <dir>");
+            eprintln!("computer-use: computer-history requires --root <dir>");
             std::process::exit(2);
         };
         if let Err(error) = history::run(root) {
-            eprintln!("t3-desktop-mcp: computer-history stopped: {error}");
+            eprintln!("computer-use: computer-history stopped: {error}");
             std::process::exit(1);
         }
         return;
@@ -96,7 +96,7 @@ fn main() {
     let mut desktop = match platform::backend() {
         Ok(backend) => Some(backend),
         Err(error) => {
-            eprintln!("t3-desktop-mcp: desktop backend unavailable: {error}");
+            eprintln!("computer-use: desktop backend unavailable: {error}");
             None
         }
     };
@@ -110,7 +110,7 @@ fn main() {
         let line = match line {
             Ok(line) => line,
             Err(error) => {
-                eprintln!("t3-desktop-mcp: stdin closed: {error}");
+                eprintln!("computer-use: stdin closed: {error}");
                 break;
             }
         };
@@ -122,7 +122,7 @@ fn main() {
         let request: Value = match serde_json::from_str(trimmed) {
             Ok(value) => value,
             Err(error) => {
-                eprintln!("t3-desktop-mcp: malformed JSON: {error}");
+                eprintln!("computer-use: malformed JSON: {error}");
                 let response = json!({
                     "jsonrpc": "2.0",
                     "id": null,

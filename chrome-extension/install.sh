@@ -12,25 +12,25 @@ HOST_NAME="com.munim.mtcode.desktop"
 # Extensions that have not reloaded since the rename still ask for the old id,
 # and Chrome refuses a host it has no manifest for. Both names are registered
 # so neither side has to be updated first.
-LEGACY_HOST_NAME="com.t3tools.t3code.desktop"
+LEGACY_HOST_NAME="com.munimtech.computer-use.desktop"
 
 here=$(cd "$(dirname "$0")" && pwd)
 # macOS builds the Swift package; Linux builds the Rust crate that also covers
-# Windows. Either way the binary is called t3-desktop-mcp.
+# Windows. Either way the binary is called computer-use.
 case "$(uname -s)" in
   Darwin)
     for candidate in \
-      "$here/../t3-desktop-mcp/.build/apple/Products/Release/t3-desktop-mcp" \
-      "$here/../t3-desktop-mcp/.build/release/t3-desktop-mcp"; do
+      "$here/../macos/.build/apple/Products/Release/computer-use" \
+      "$here/../macos/.build/release/computer-use"; do
       if [ -x "$candidate" ]; then
         default_binary="$candidate"
         break
       fi
     done
     ;;
-  *)      default_binary="$here/../t3-desktop-mcp-rs/target/release/t3-desktop-mcp" ;;
+  *)      default_binary="$here/../windows-linux/target/release/computer-use" ;;
 esac
-binary="${T3CODE_DESKTOP_MCP_PATH:-$default_binary}"
+binary="${COMPUTER_USE_PATH:-$default_binary}"
 if [ ! -x "$binary" ]; then
   echo "desktop server binary not found at: $binary" >&2
   echo "build it first:  pnpm build:desktop-mcp" >&2
@@ -38,8 +38,8 @@ if [ ! -x "$binary" ]; then
 fi
 
 case "$(uname -s)" in
-  Darwin) support="$HOME/Library/Application Support/t3-desktop-mcp" ;;
-  *)      support="${XDG_DATA_HOME:-$HOME/.local/share}/t3-desktop-mcp" ;;
+  Darwin) support="$HOME/Library/Application Support/computer-use" ;;
+  *)      support="${XDG_DATA_HOME:-$HOME/.local/share}/computer-use" ;;
 esac
 mkdir -p "$support"
 wrapper="$support/native-host"

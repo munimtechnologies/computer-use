@@ -1,2 +1,2 @@
-t3-desktop-mcp/.build/
-t3-desktop-mcp-rs/target/
+macos/.build/
+windows-linux/target/

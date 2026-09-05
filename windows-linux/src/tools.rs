@@ -6,7 +6,7 @@
 
 use serde_json::{Value, json};
 
-/// Host settings pass `T3_DESKTOP_BROWSER=0` when browser control is off.
+/// Host settings pass `COMPUTER_USE_BROWSER=0` when browser control is off.
 pub fn env_flag_disabled(name: &str) -> bool {
     match std::env::var(name) {
         Ok(raw) => {
@@ -18,7 +18,7 @@ pub fn env_flag_disabled(name: &str) -> bool {
 }
 
 pub fn browser_control_enabled() -> bool {
-    !env_flag_disabled("T3_DESKTOP_BROWSER")
+    !env_flag_disabled("COMPUTER_USE_BROWSER")
 }
 
 pub fn tool_defs() -> Value {

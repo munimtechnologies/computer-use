@@ -1,5 +1,5 @@
 [package]
-name = "t3-desktop-mcp-rs"
+name = "computer-use-native"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
@@ -9,7 +9,7 @@ publish = false
 # API. This crate covers the platforms Swift cannot reach, and ships the same
 # binary name so the server's resolver treats all three identically.
 [[bin]]
-name = "t3-desktop-mcp"
+name = "computer-use"
 path = "src/main.rs"
 
 [dependencies]

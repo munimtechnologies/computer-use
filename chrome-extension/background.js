@@ -14,7 +14,7 @@ const HOST = "com.munim.mtcode.desktop";
 // Installs made before the rename registered the host under its old name.
 // Chrome rejects an unknown host outright, so try the previous id second
 // rather than leaving those browsers unable to reach the desktop at all.
-const LEGACY_HOST = "com.t3tools.t3code.desktop";
+const LEGACY_HOST = "com.munimtech.computer-use.desktop";
 const GROUP_TITLE = "MT Code";
 const OWNED_STATE_KEY = "ownedState";
 
@@ -207,16 +207,16 @@ function connect() {
 // when idle and timers do not survive that, which would strand the connection
 // until the user reloaded the extension by hand.
 // Chrome clamps alarm periods to a minute, so ask for what we will get.
-chrome.alarms.create("t3-reconnect", { periodInMinutes: 1 });
+chrome.alarms.create("cu-reconnect", { periodInMinutes: 1 });
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === "t3-reconnect") connect();
+  if (alarm.name === "cu-reconnect") connect();
 });
 chrome.runtime.onStartup.addListener(connect);
 chrome.runtime.onInstalled.addListener(connect);
 // Connect as soon as the service worker evaluates. onStartup/onInstalled alone
 // can miss unpacked loads; content-script pings also wake us via onMessage.
 chrome.runtime.onMessage.addListener((msg) => {
-  if (msg && msg.type === "t3-wake") connect();
+  if (msg && msg.type === "cu-wake") connect();
 });
 connect();
 
@@ -271,7 +271,7 @@ async function ensureGroup(clientId, tabId) {
     } else {
       await chrome.tabs.group({ groupId: state.groupId, tabIds: [tabId] });
     }
-    // Agent tabs get the pointer favicon (not the T3 toolbar logo) as soon as
+    // Agent tabs get the pointer favicon (not the MT toolbar logo) as soon as
     // they join the group, so the strip reads as "agent-owned" before the first click.
     await markTab(tabId);
     await persistOwnedState();
@@ -388,7 +388,7 @@ const SNAPSHOT_JS = `(() => {
     const label = (el.getAttribute('aria-label') || el.innerText || el.value ||
                    el.getAttribute('title') || el.getAttribute('placeholder') || '')
                   .replace(/\\s+/g, ' ').trim().slice(0, 90);
-    el.setAttribute('data-t3-idx', String(i));
+    el.setAttribute('data-cu-idx', String(i));
     out.push({
       i: i++,
       tag: el.tagName.toLowerCase(),
@@ -463,12 +463,12 @@ const CURSOR_IMG_URL = chrome.runtime.getURL("icons/cursor-224.png");
 const CURSOR_HOTSPOT = 56; // OverlayController.hotspot — tip at centre of 112×112
 const CURSOR_FADE_IN_MS = 500;
 const CURSOR_FADE_OUT_MS = 350;
-/** Match desktop `T3_DESKTOP_AGENT_CURSOR_TASK_FADE_SECS` default (8s). */
+/** Match desktop `COMPUTER_USE_AGENT_CURSOR_TASK_FADE_SECS` default (8s). */
 const CURSOR_TASK_FADE_MS = 8000;
 
 const PAINT_CURSOR_JS = `
   (function paint(x, y, src, fadeInMs, fadeOutMs, taskFadeMs, hotspot) {
-    const ID = '__t3AgentCursor';
+    const ID = '__munimAgentCursor';
     const easeInOut = (t) => t * t * (3 - 2 * t);
     const bezier = (p0, p1, p2, p3, t) => {
       const u = 1 - t;
@@ -486,7 +486,7 @@ const PAINT_CURSOR_JS = `
       el.style.cssText = 'position:fixed;left:0;top:0;width:112px;height:112px;' +
         'pointer-events:none;z-index:2147483647;opacity:0;will-change:transform,opacity;' +
         'transform-origin:' + hotspot + 'px ' + hotspot + 'px;';
-      // Same artwork as desktop BubbleView / T3AgentCursor (cursor-224.png, 2x).
+      // Same artwork as desktop BubbleView / MunimAgentCursor (cursor-224.png, 2x).
       const img = document.createElement('img');
       img.src = src;
       img.width = 112;
@@ -497,15 +497,15 @@ const PAINT_CURSOR_JS = `
         'transform-origin:' + hotspot + 'px ' + hotspot + 'px;will-change:transform;';
       el.appendChild(img);
       (document.documentElement || document.body).appendChild(el);
-      el.__t3 = { x: x, y: y, tilt: 0, arc: 1, raf: 0, breatheRaf: 0, phase: 0 };
+      el.__cu = { x: x, y: y, tilt: 0, arc: 1, raf: 0, breatheRaf: 0, phase: 0 };
     } else {
       const img = el.querySelector('img');
       if (img && img.src !== src) img.src = src;
     }
 
-    const st = el.__t3 || (el.__t3 = { x: x, y: y, tilt: 0, arc: 1, raf: 0, breatheRaf: 0, phase: 0 });
+    const st = el.__cu || (el.__cu = { x: x, y: y, tilt: 0, arc: 1, raf: 0, breatheRaf: 0, phase: 0 });
     if (st.raf) { cancelAnimationFrame(st.raf); st.raf = 0; }
-    clearTimeout(el.__t3hide);
+    clearTimeout(el.__cuhide);
 
     // Idle breathe matches BubbleView: scale 1 + 0.03*sin(phase) on the artwork.
     const ensureBreathe = () => {
@@ -607,7 +607,7 @@ const PAINT_CURSOR_JS = `
       st.raf = requestAnimationFrame(tick);
     }
 
-    el.__t3hide = setTimeout(function () {
+    el.__cuhide = setTimeout(function () {
       if (st.breatheRaf) { cancelAnimationFrame(st.breatheRaf); st.breatheRaf = 0; }
       const img = el.querySelector('img');
       if (img) img.style.transform = '';
@@ -631,7 +631,7 @@ async function paintCursor(tabId, x, y) {
         `(() => {` +
         `  const r = (${PAINT_CURSOR_JS})(${Number(x)}, ${Number(y)}, ${JSON.stringify(CURSOR_IMG_URL)},` +
         `    ${CURSOR_FADE_IN_MS}, ${CURSOR_FADE_OUT_MS}, ${CURSOR_TASK_FADE_MS}, ${CURSOR_HOTSPOT});` +
-        `  const el = document.getElementById('__t3AgentCursor');` +
+        `  const el = document.getElementById('__munimAgentCursor');` +
         `  if (!el) return { ok: false, reason: 'paint produced no element' };` +
         `  const img = el.querySelector('img');` +
         `  return Object.assign({}, r, {` +
@@ -662,12 +662,12 @@ async function hideCursor(tabId) {
     await send(tabId, "Runtime.evaluate", {
       expression:
         `(() => {` +
-        `  const el = document.getElementById('__t3AgentCursor');` +
+        `  const el = document.getElementById('__munimAgentCursor');` +
         `  if (!el) return false;` +
-        `  clearTimeout(el.__t3hide);` +
-        `  if (el.__t3 && el.__t3.raf) cancelAnimationFrame(el.__t3.raf);` +
-        `  if (el.__t3 && el.__t3.breatheRaf) cancelAnimationFrame(el.__t3.breatheRaf);` +
-        `  if (el.__t3) { el.__t3.raf = 0; el.__t3.breatheRaf = 0; }` +
+        `  clearTimeout(el.__cuhide);` +
+        `  if (el.__cu && el.__cu.raf) cancelAnimationFrame(el.__cu.raf);` +
+        `  if (el.__cu && el.__cu.breatheRaf) cancelAnimationFrame(el.__cu.breatheRaf);` +
+        `  if (el.__cu) { el.__cu.raf = 0; el.__cu.breatheRaf = 0; }` +
         `  const img = el.querySelector('img');` +
         `  if (img) img.style.transform = '';` +
         `  el.style.transition = 'opacity ${CURSOR_FADE_OUT_MS}ms ease';` +
@@ -682,7 +682,7 @@ async function hideCursor(tabId) {
 }
 
 const CLICK_JS = (index) => `(() => {
-  const el = document.querySelector('[data-t3-idx="${index}"]');
+  const el = document.querySelector('[data-cu-idx="${index}"]');
   if (!el) return { ok: false, reason: 'element ${index} is no longer on the page' };
   el.scrollIntoView({ block: 'center', inline: 'nearest' });
   const r = el.getBoundingClientRect();
@@ -754,9 +754,9 @@ async function navigate(tabId, url) {
 
 // ── "the agent is using this tab" indicator ─────────────────────────────────
 //
-// Toolbar icon = T3 logo (manifest icons/). Tab favicon = the same Computer Use
+// Toolbar icon = MT logo (manifest icons/). Tab favicon = the same Computer Use
 // cursor PNG the page overlay paints (icons/cursor-112.png) — one source of
-// truth with BubbleView / T3AgentCursor, scaled by Chrome in the tab strip.
+// truth with BubbleView / MunimAgentCursor, scaled by Chrome in the tab strip.
 //
 // An extension cannot set a tab's favicon directly, but it can replace the
 // page's icon link, which is what Chrome renders in the tab strip. Pages

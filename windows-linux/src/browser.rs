@@ -6,7 +6,7 @@
 //! lifetime, so the two are joined by a local socket:
 //!
 //! ```text
-//!   Chrome ──stdio(length-prefixed)──▶ `t3-desktop-mcp native-host`
+//!   Chrome ──stdio(length-prefixed)──▶ `computer-use native-host`
 //!                                          │ local socket
 //!                                          ▼
 //!                                    MCP server (this process)
@@ -51,77 +51,77 @@ fn new_browser_client_id() -> String {
 #[cfg(unix)]
 fn bridge_socket_path() -> Option<PathBuf> {
     let dir = if let Some(runtime) = std::env::var_os("XDG_RUNTIME_DIR") {
-        PathBuf::from(runtime).join("t3-desktop-mcp")
+        PathBuf::from(runtime).join("computer-use")
     } else if let Some(home) = std::env::var_os("HOME") {
-        PathBuf::from(home).join(".local/share/t3-desktop-mcp")
+        PathBuf::from(home).join(".local/share/computer-use")
     } else {
         // Prefer a UID-owned private dir over a USER-named /tmp path another
         // local account can pre-create. Fail closed if we cannot claim it.
         let uid = unsafe { libc::getuid() };
-        std::env::temp_dir().join(format!("t3-desktop-mcp-{uid}"))
+        std::env::temp_dir().join(format!("computer-use-{uid}"))
     };
 
     use std::os::unix::fs::{MetadataExt, PermissionsExt};
 
     // `create_dir_all` / `metadata` / `set_permissions` follow symlinks. A
-    // pre-planted `/tmp/t3-desktop-mcp-{uid}` → victim-dir symlink would let us
+    // pre-planted `/tmp/computer-use-{uid}` → victim-dir symlink would let us
     // chmod someone else's directory and drop `bridge.sock` there. Reject
     // symlinks via `symlink_metadata` before and after create.
     match std::fs::symlink_metadata(&dir) {
         Ok(meta) if meta.file_type().is_symlink() => {
-            eprintln!("t3-desktop-mcp: bridge dir is a symlink; refusing");
+            eprintln!("computer-use: bridge dir is a symlink; refusing");
             return None;
         }
         Ok(_) => {}
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
             if let Err(error) = std::fs::create_dir_all(&dir) {
-                eprintln!("t3-desktop-mcp: bridge dir create failed: {error}");
+                eprintln!("computer-use: bridge dir create failed: {error}");
                 return None;
             }
         }
         Err(error) => {
-            eprintln!("t3-desktop-mcp: bridge dir metadata failed: {error}");
+            eprintln!("computer-use: bridge dir metadata failed: {error}");
             return None;
         }
     }
 
     let metadata = match std::fs::symlink_metadata(&dir) {
         Ok(meta) if meta.file_type().is_symlink() => {
-            eprintln!("t3-desktop-mcp: bridge dir became a symlink; refusing");
+            eprintln!("computer-use: bridge dir became a symlink; refusing");
             return None;
         }
         Ok(metadata) => metadata,
         Err(error) => {
-            eprintln!("t3-desktop-mcp: bridge dir metadata failed: {error}");
+            eprintln!("computer-use: bridge dir metadata failed: {error}");
             return None;
         }
     };
     if !metadata.is_dir() {
-        eprintln!("t3-desktop-mcp: bridge path is not a directory");
+        eprintln!("computer-use: bridge path is not a directory");
         return None;
     }
     if metadata.uid() != unsafe { libc::getuid() } {
-        eprintln!("t3-desktop-mcp: bridge dir not owned by current user");
+        eprintln!("computer-use: bridge dir not owned by current user");
         return None;
     }
     if let Err(error) = std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o700)) {
-        eprintln!("t3-desktop-mcp: bridge dir chmod failed: {error}");
+        eprintln!("computer-use: bridge dir chmod failed: {error}");
         return None;
     }
     // Re-check mode after chmod — refuse a sticky/world-writable directory.
     let mode = match std::fs::symlink_metadata(&dir) {
         Ok(meta) if meta.file_type().is_symlink() => {
-            eprintln!("t3-desktop-mcp: bridge dir became a symlink after chmod; refusing");
+            eprintln!("computer-use: bridge dir became a symlink after chmod; refusing");
             return None;
         }
         Ok(metadata) => metadata.mode() & 0o777,
         Err(error) => {
-            eprintln!("t3-desktop-mcp: bridge dir re-stat failed: {error}");
+            eprintln!("computer-use: bridge dir re-stat failed: {error}");
             return None;
         }
     };
     if mode != 0o700 {
-        eprintln!("t3-desktop-mcp: bridge dir mode {mode:o} is not 0700");
+        eprintln!("computer-use: bridge dir mode {mode:o} is not 0700");
         return None;
     }
     Some(dir.join("bridge.sock"))
@@ -133,7 +133,7 @@ fn bridge_pipe_name() -> String {
         .or_else(|_| std::env::var("USER"))
         .unwrap_or_else(|_| "user".into());
     // Named-pipe namespace is global; embed the username so sessions do not collide.
-    format!("t3-desktop-mcp-bridge-{user}")
+    format!("computer-use-bridge-{user}")
 }
 
 pub struct BrowserBridge {
@@ -191,7 +191,7 @@ impl BrowserBridge {
         if !self.connected() {
             return Err(format!(
                 "browser_{command} needs the MT Desktop MCP Chrome extension, which is not connected. \
-                 Install it from native/t3-chrome-extension, or use the desktop tools instead: \
+                 Install it from chrome-extension, or use the desktop tools instead: \
                  get_app_state on the browser window, then click"
             ));
         }
@@ -412,7 +412,7 @@ fn spawn_listener(
             if let Err(error) =
                 std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600))
             {
-                eprintln!("t3-desktop-mcp: bridge socket chmod failed: {error}");
+                eprintln!("computer-use: bridge socket chmod failed: {error}");
                 return;
             }
         }

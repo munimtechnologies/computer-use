@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT=/smoke/root
-BIN=/src/target/release/t3-desktop-mcp
+BIN=/src/target/release/computer-use
 LOG=/smoke/out.txt
 : >"$LOG"
 

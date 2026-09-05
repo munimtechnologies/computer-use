@@ -14,19 +14,19 @@ $ExtensionId = 'kgdolgnijopbghhomnblabjkmjhnoage'
 $HostName = 'com.munim.mtcode.desktop'
 # Extensions that have not reloaded since the rename still ask for the old id,
 # and Chrome refuses a host it has no manifest for. Register both names.
-$LegacyHostName = 'com.t3tools.t3code.desktop'
+$LegacyHostName = 'com.munimtech.computer-use.desktop'
 
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$binary = $env:T3CODE_DESKTOP_MCP_PATH
+$binary = $env:COMPUTER_USE_PATH
 if (-not $binary) {
-  $binary = Join-Path $here '..\t3-desktop-mcp-rs\target\release\t3-desktop-mcp.exe'
+  $binary = Join-Path $here '..\computer-use-native\target\release\computer-use.exe'
 }
 if (-not (Test-Path $binary)) {
-  Write-Error "desktop server binary not found at: $binary`nbuild it first:  cargo build --release --manifest-path native/t3-desktop-mcp-rs/Cargo.toml"
+  Write-Error "desktop server binary not found at: $binary`nbuild it first:  cargo build --release --manifest-path windows-linux/Cargo.toml"
 }
 $binary = (Resolve-Path $binary).Path
 
-$support = Join-Path $env:LOCALAPPDATA 't3-desktop-mcp'
+$support = Join-Path $env:LOCALAPPDATA 'computer-use'
 New-Item -ItemType Directory -Force -Path $support | Out-Null
 
 # Chrome passes no arguments to a host, so the wrapper supplies the mode.

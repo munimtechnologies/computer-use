@@ -1849,7 +1849,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "t3-desktop-mcp-rs"
+name = "computer-use-native"
 version = "0.1.0"
 dependencies = [
  "atspi",
